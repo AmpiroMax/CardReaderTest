@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     DataEncoder encoder;
     CString inFileName("");
     CString outFileName("");
-    CString iniFileName("FileEncoderDLL.ini");
+    CString iniFileName("DataEncoder.ini");
     if (argc < 2)
     {
         log("Not enough params were passed! Expected at least 2");
