@@ -1,6 +1,7 @@
 #include "DataEncoder.h"
 #include "crc.h"
 #include "des.h"
+#include <time.h>
 
 const int KEY_LENGTH = 24;
 const int buffSize = 1000;
@@ -10,7 +11,7 @@ DataEncoder::DataEncoder() {}
 void DataEncoder::initialize(const CString &iniFileName, int &codeError)
 {
     isInited = 0;
-
+    srand(time(NULL));
     CString sectionName("MAIN");
 
     CString iniFilePath("");
@@ -28,26 +29,9 @@ void DataEncoder::initialize(const CString &iniFileName, int &codeError)
                             dataColumnName.GetBufferSetLength(MAX_PATH), MAX_PATH, iniFilePath);
     dataColumnName.ReleaseBuffer();
 
-    GetPrivateProfileString(sectionName, CString("inFileName"), CString(""), inFileName.GetBufferSetLength(MAX_PATH),
-                            MAX_PATH, iniFilePath);
-    inFileName.ReleaseBuffer();
-    if (inFileName.IsEmpty())
-    {
-        log("DataEncoder::initialize | No input file name was provided");
-        codeError = -1;
-        return;
-    }
-
-    GetPrivateProfileString(sectionName, CString("outFileName"), CString(""), outFileName.GetBufferSetLength(MAX_PATH),
-                            MAX_PATH, iniFilePath);
-    outFileName.ReleaseBuffer();
-
     GetPrivateProfileString(sectionName, CString("suffix"), CString("_x"), suffix.GetBufferSetLength(MAX_PATH),
                             MAX_PATH, iniFilePath);
     suffix.ReleaseBuffer();
-
-    if (outFileName.IsEmpty())
-        outFileName = inFileName.Mid(0, inFileName.GetLength() - 4) + suffix + CString(".txt");
 
     GetPrivateProfileString(sectionName, CString("readerName"), CString(""), readerName.GetBufferSetLength(MAX_PATH),
                             MAX_PATH, iniFilePath);
@@ -82,8 +66,9 @@ void DataEncoder::initialize(const CString &iniFileName, int &codeError)
     isInited = 1;
 }
 
-void DataEncoder::encodeFile(int &codeError)
+void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileName, int &codeError)
 {
+    log("DataEncoder::encodeFile | Starting file encoding");
     if (!isInited)
     {
         codeError = -1;
@@ -98,9 +83,18 @@ void DataEncoder::encodeFile(int &codeError)
     char *cpInFileName = asciiInFileName.m_psz;
     FILE *inFile = fopen(cpInFileName, "r");
 
-    CT2A asciiOutFileName(outFileName);
+    CString realOutFileName("");
+    if (outFileName == inFileName)
+        realOutFileName = inFileName.Mid(0, inFileName.GetLength() - 4) + suffix + CString(".txt");
+    else
+        realOutFileName = outFileName;
+
+    CT2A asciiOutFileName(realOutFileName);
     char *cpOutFileName = asciiOutFileName.m_psz;
     FILE *outFile = fopen(cpOutFileName, "w");
+
+    log("DataEncoder::encodeFile | Recieving data from [" + inFileName + "]");
+    log("DataEncoder::encodeFile | Saving data to      [" + realOutFileName + "]");
 
     if (inFile == NULL)
     {
@@ -172,6 +166,8 @@ void DataEncoder::encodeFile(int &codeError)
 
     fclose(inFile);
     fclose(outFile);
+
+    log("DataEncoder::encodeFile | File was successfully encoded");
 }
 
 CString DataEncoder::getLog()
@@ -337,6 +333,7 @@ CString DataEncoder::attemptToGetCardKey(int &codeError)
 
 CString DataEncoder::getCardKey(int &codeError)
 {
+    log("DataEncoder::getCardKey | Recieving card key from [" + readerName + "]");
     // int readingAttempts = 30;
     // CString recievedCardKey = emptyString;
 
@@ -351,13 +348,21 @@ CString DataEncoder::getCardKey(int &codeError)
 
     // if (cardReadingError != 0)
     //    codeError = cardReadingError;
-
+    log("DataEncoder::getCardKey | Key was recieved");
     return CString("1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f");
 }
 
 CString DataEncoder::getEncKey(int &codeError)
 {
-    return CString("1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f");
+    CString prefix = "";
+
+    for (int i = 0; i < 2 * KEY_LENGTH; ++i)
+    {
+        int randomSymbolIdx = rand() % prefixAlphabet.GetLength();
+        prefix += prefixAlphabet[randomSymbolIdx];
+    }
+
+    return prefix;
 }
 
 CString DataEncoder::encString(const CString &data)
@@ -498,5 +503,7 @@ CString DataEncoder::setFieldToColumn(const CString &data, const CString &field,
 
 void DataEncoder::log(const CString &str)
 {
+    CString msg = str.Mid(str.Find(CString("|"), 0) + 2);
+    printf("%S \n", msg);
     logger += str + "\n";
 }

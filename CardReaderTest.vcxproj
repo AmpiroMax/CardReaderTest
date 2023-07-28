@@ -78,6 +78,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>DataEncoder</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -143,17 +144,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CardReaderTest.cpp" />
+    <ClCompile Include="EncoderUtil.cpp" />
     <ClCompile Include="crc.cpp" />
     <ClCompile Include="DataEncoder.cpp" />
     <ClCompile Include="des.cpp" />
-    <ClCompile Include="SecureManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="crc.h" />
     <ClInclude Include="DataEncoder.h" />
     <ClInclude Include="des.h" />
-    <ClInclude Include="SecureManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
