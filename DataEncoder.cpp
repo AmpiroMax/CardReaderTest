@@ -28,6 +28,27 @@ void DataEncoder::initialize(const CString &iniFileName, int &codeError)
                             dataColumnName.GetBufferSetLength(MAX_PATH), MAX_PATH, iniFilePath);
     dataColumnName.ReleaseBuffer();
 
+    GetPrivateProfileString(sectionName, CString("inFileName"), CString(""), inFileName.GetBufferSetLength(MAX_PATH),
+                            MAX_PATH, iniFilePath);
+    inFileName.ReleaseBuffer();
+    if (inFileName.IsEmpty())
+    {
+        log("DataEncoder::initialize | No input file name was provided");
+        codeError = -1;
+        return;
+    }
+
+    GetPrivateProfileString(sectionName, CString("outFileName"), CString(""), outFileName.GetBufferSetLength(MAX_PATH),
+                            MAX_PATH, iniFilePath);
+    outFileName.ReleaseBuffer();
+
+    GetPrivateProfileString(sectionName, CString("suffix"), CString("_x"), suffix.GetBufferSetLength(MAX_PATH),
+                            MAX_PATH, iniFilePath);
+    suffix.ReleaseBuffer();
+
+    if (outFileName.IsEmpty())
+        outFileName = inFileName.Mid(0, inFileName.GetLength() - 4) + suffix + CString(".txt");
+
     GetPrivateProfileString(sectionName, CString("readerName"), CString(""), readerName.GetBufferSetLength(MAX_PATH),
                             MAX_PATH, iniFilePath);
     readerName.ReleaseBuffer();
@@ -61,7 +82,7 @@ void DataEncoder::initialize(const CString &iniFileName, int &codeError)
     isInited = 1;
 }
 
-void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileName, int &codeError)
+void DataEncoder::encodeFile(int &codeError)
 {
     if (!isInited)
     {

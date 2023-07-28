@@ -15,7 +15,7 @@ class DataEncoder
 
     void initialize(const CString &iniFileName, int &codeError);
 
-    void encodeFile(const CString &inFileName, const CString &outFileName, int &codeError);
+    void encodeFile(int &codeError);
 
     CString getLog();
 
@@ -32,6 +32,10 @@ class DataEncoder
     CString readerName;
     CString encKey;
     CString cardKey;
+
+    CString inFileName;
+    CString outFileName;
+    CString suffix;
 
     char paddingSym = 'D';
     CString emptyString = "";

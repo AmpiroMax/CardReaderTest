@@ -185,10 +185,7 @@ void testEncoderInitilize(int &errorCode)
 
 void testDataEncoding(int &errorCode)
 {
-    CString dataFileName("test_in.txt");
-    CString outFileName("test_out.txt");
-
-    encoder.encodeFile(dataFileName, outFileName, errorCode);
+    encoder.encodeFile(errorCode);
 }
 
 /*
