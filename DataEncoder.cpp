@@ -25,7 +25,7 @@ void DataEncoder::initialize(const CString &iniFileName, int &codeError)
     dataLineNumber = GetPrivateProfileInt(sectionName, CString("dataLineNumber"), 3, iniFilePath) - 1;
 
     // Reading STR vars
-    GetPrivateProfileString(sectionName, CString("dataColumnName"), CString(""),
+    GetPrivateProfileString(sectionName, CString("dataColumnName"), CString("DATA"),
                             dataColumnName.GetBufferSetLength(MAX_PATH), MAX_PATH, iniFilePath);
     dataColumnName.ReleaseBuffer();
 
