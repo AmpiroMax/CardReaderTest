@@ -10,6 +10,11 @@
 
 class DataEncoder
 {
+    enum TypeKey
+    {
+        Billet,
+        Encrypt
+    };
  public:
     DataEncoder();
 
@@ -48,7 +53,7 @@ class DataEncoder
     // Interaction with card
     std::vector<CString> getReadersNames(int &codeError);
 
-    CString attemptToGetCardKey(int &codeError);
+    CString attemptToGetCardKey(TypeKey type, int &codeError);
 
     CString getCardKey(int &codeError);
 

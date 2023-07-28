@@ -60,22 +60,29 @@ void DataEncoder::initialize(const CString &iniFileName, int &codeError)
         readerName = readersNames[0];
 
     // Recieving key for data encryption
-    _encKey = getEncKey(codeError);
-    _cardKey = getCardKey(codeError);
+//    _encKey = getEncKey(codeError);
+//    _cardKey = getCardKey(codeError);
+    _encKey =attemptToGetCardKey(TypeKey::Billet, codeError);
+    _cardKey=attemptToGetCardKey(TypeKey::Encrypt, codeError);
+    if(_encKey.IsEmpty() || _cardKey.IsEmpty())
+    {
+        log("DataEncoder::initialize | Error generate keys \n");
+        return;
+    }
 
     isInited = 1;
 }
 
 void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileName, int &codeError)
 {
-    log("DataEncoder::encodeFile | Starting file encoding");
     if (!isInited)
     {
         codeError = -1;
-        log("DataEncoder::encodeFile | Class object is not initialized");
+        log("DataEncoder::encodeFile | Data is not initialized");
         return;
     }
 
+    log("DataEncoder::encodeFile | Starting file encoding");
     int currLineNum = 0;
     char line[buffSize];
 
@@ -222,10 +229,16 @@ std::vector<CString> DataEncoder::getReadersNames(int &codeError)
             codeError = -1;
             break;
     }
+
+    CString readers;
+    for (const auto& str : readersNames)
+        readers += "\"" + str + "\"";
+    log("DataEncoder::getReadersNames | Readers :  " + readers);
+
     return readersNames;
 }
 
-CString DataEncoder::attemptToGetCardKey(int &codeError)
+CString DataEncoder::attemptToGetCardKey(TypeKey typeKey,int &codeError)
 {
     SCARDHANDLE hCardHandle = 0;
 
@@ -262,12 +275,13 @@ CString DataEncoder::attemptToGetCardKey(int &codeError)
     // Set APDU Select Applet ID
     static const BYTE SELECT_AID[] = {0x00, 0xA4, 0x04, 0x04, 0x10, 0xFF, 0x45, 0x43, 0x50, 0x52, 0x55,
                                       0x53, 0x4B, 0x45, 0x59, 0x42, 0x4F, 0x58, 0x00, 0x00, 0x11};
+    // Set APDU Get Random
+    BYTE GET_RAND[] = { 0x80, 0x50, 0x00, 0x00, 0x18};
     // Set APDU Get Key
     BYTE GET_KEY[] = {0x80, 0x40, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     // Copy Challenge to APDU Get Key
     memcpy(GET_KEY + 5, Challenge, 24);
-
     // Set APDU Get Response for Key
     BYTE GET_RESPONSE[] = {0x00, 0xC0, 0x00, 0x00, 0x18};
 
@@ -280,7 +294,6 @@ CString DataEncoder::attemptToGetCardKey(int &codeError)
         codeError = -1;
         return emptyString;
     }
-
     // Check Status word, if not success, exit with error
     if ((pbRecv[0] != 0x90) || (pbRecv[1] != 0x00))
     {
@@ -289,34 +302,56 @@ CString DataEncoder::attemptToGetCardKey(int &codeError)
         return emptyString;
     }
 
-    // Send Command Get Key to Card
-    dwRecv = sizeof(pbRecv);
-    if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_KEY, sizeof(GET_KEY), NULL, pbRecv, &dwRecv) != 0)
+    switch (typeKey)
     {
-        log("DataEncoder::attemptToGetCardKey | No connection with the card or the reader during Key recive \n");
-        SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
+        case TypeKey::Billet:
+        // Send Command Get Key to Card
+        dwRecv = sizeof(pbRecv);
+        if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_RAND, sizeof(GET_RAND), NULL, pbRecv, &dwRecv) != 0)
+        {
+            log("DataEncoder::attemptToGetCardKey | No connection with the card or the reader during Key recive \n");
+            SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
+            codeError = -1;
+            return emptyString;
+        }
+        break;
+        case TypeKey::Encrypt:
+        // Send Command Get Key to Card
+        dwRecv = sizeof(pbRecv);
+        if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_KEY, sizeof(GET_KEY), NULL, pbRecv, &dwRecv) != 0)
+        {
+            log("DataEncoder::attemptToGetCardKey | No connection with the card or the reader during Key recive \n");
+            SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
+            codeError = -1;
+            return emptyString;
+        }
+        // Check Status word, if not success, exit with error
+        if ((pbRecv[0] != 0x61) || (pbRecv[1] != 0x18))
+        {
+            log("DataEncoder::attemptToGetCardKey | Do not run the command GET KEY \n");
+            SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
+            codeError = -1;
+            return emptyString;
+        }
+
+        // Take the key from card
+        dwRecv = sizeof(pbRecv);
+        if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_RESPONSE, sizeof(GET_RESPONSE), NULL, pbRecv, &dwRecv) != 0)
+        {
+            log("DataEncoder::attemptToGetCardKey | Failed to read key from the card \n");
+            SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
+            codeError = -1;
+            return emptyString;
+        }
+
+        break;
+    default:
+        log("DataEncoder::attemptToGetCardKey | There is no typeKey \n");
         codeError = -1;
         return emptyString;
+        break;
     }
 
-    // Check Status word, if not success, exit with error
-    if ((pbRecv[0] != 0x61) || (pbRecv[1] != 0x18))
-    {
-        log("DataEncoder::attemptToGetCardKey | Do not run the command GET KEY \n");
-        SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
-        codeError = -1;
-        return emptyString;
-    }
-
-    // Take the key from card
-    dwRecv = sizeof(pbRecv);
-    if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_RESPONSE, sizeof(GET_RESPONSE), NULL, pbRecv, &dwRecv) != 0)
-    {
-        log("DataEncoder::attemptToGetCardKey | Failed to read key from the card \n");
-        SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
-        codeError = -1;
-        return emptyString;
-    }
 
     // Check Status word, if not success, exit with error
     if ((pbRecv[24] != 0x90) || (pbRecv[25] != 0x00))
