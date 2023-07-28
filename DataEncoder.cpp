@@ -81,7 +81,12 @@ void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileNa
 
     CT2A asciiInFileName(inFileName);
     char *cpInFileName = asciiInFileName.m_psz;
-    FILE *inFile = fopen(cpInFileName, "r");
+
+    char full[_MAX_PATH];
+    if (_fullpath(full, cpInFileName, _MAX_PATH) != NULL)
+        log("DataEncoder::encodeFile | Full path is : [" + CString(full) + "]");
+
+    FILE *inFile = fopen(full, "r");
 
     CString realOutFileName("");
     if (outFileName == inFileName)
@@ -487,7 +492,7 @@ CString DataEncoder::setFieldToColumn(const CString &data, const CString &field,
 
         if (strToken.IsEmpty())
         {
-            log("DataEncoder::setFieldToColumn | Error while processing line [ " + data + "]");
+            log("DataEncoder::setFieldToColumn | Error while set processing line [ " + data + "]");
             codeError = -1;
             return emptyString;
         }
