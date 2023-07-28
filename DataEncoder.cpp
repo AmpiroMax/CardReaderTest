@@ -60,8 +60,8 @@ void DataEncoder::initialize(const CString &iniFileName, int &codeError)
         readerName = readersNames[0];
 
     // Recieving key for data encryption
-    encKey = getEncKey(codeError);
-    cardKey = getCardKey(codeError);
+    _encKey = getEncKey(codeError);
+    _cardKey = getCardKey(codeError);
 
     isInited = 1;
 }
@@ -142,7 +142,7 @@ void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileNa
     CString encField("ENC=");
 
     // Suppose ENC field is the first one
-    formatString = setFieldToColumn(formatString, encField + encKey, 0, codeError);
+    formatString = setFieldToColumn(formatString, encField + _encKey, 0, codeError);
     if (codeError != 0)
         return;
 
@@ -234,7 +234,7 @@ CString DataEncoder::attemptToGetCardKey(int &codeError)
 
     BYTE Challenge[24];
 
-    CT2A ascii(encKey);
+    CT2A ascii(_encKey);
     char *charPtrData = ascii.m_psz;
     int bLen = hex2bin((unsigned char *)charPtrData, Challenge);
 
@@ -373,7 +373,7 @@ CString DataEncoder::getEncKey(int &codeError)
 CString DataEncoder::encString(const CString &data)
 {
     BYTE key[24];
-    CT2A asciiCardKey(cardKey);
+    CT2A asciiCardKey(_cardKey);
     char *cstrKey = asciiCardKey.m_psz;
     hex2bin((unsigned char *)cstrKey, key);
 
@@ -400,7 +400,7 @@ CString DataEncoder::encString(const CString &data)
 CString DataEncoder::decString(const CString &data)
 {
     BYTE key[24];
-    CT2A asciiCardKey(cardKey);
+    CT2A asciiCardKey(_cardKey);
     char *cstrKey = asciiCardKey.m_psz;
     hex2bin((unsigned char *)cstrKey, key);
 

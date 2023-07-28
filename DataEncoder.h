@@ -30,8 +30,8 @@ class DataEncoder
     int dataLineNumber;
     CString dataColumnName;
     CString readerName;
-    CString encKey;
-    CString cardKey;
+    CString _encKey;
+    CString _cardKey;
 
     CString suffix;
 
