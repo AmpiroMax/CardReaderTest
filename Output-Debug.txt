@@ -1,0 +1,30 @@
+﻿'CardReaderTest.exe' (Win32): Loaded 'C:\Max\Proga\Papa_work\CRT\CardReaderTest\x64\Debug\CardReaderTest.exe'. Symbols loaded.
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\ntdll.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\kernel32.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\KernelBase.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\user32.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\win32u.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\gdi32.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\gdi32full.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\msvcp_win.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\ucrtbase.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\WinSCard.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\msvcrt.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\msvcp140d.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\vcruntime140d.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\vcruntime140_1d.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\ucrtbased.dll'. 
+Exception thrown at 0x00007FFAC4E3536C in CardReaderTest.exe: Microsoft C++ exception: unsigned long at memory location 0x000000E0018FE958.
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\imm32.dll'. 
+The thread 0x47d8 has exited with code 0 (0x0).
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\winsta.dll'. 
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\rpcrt4.dll'. 
+Exception thrown at 0x00007FFAC4E3536C in CardReaderTest.exe: Microsoft C++ exception: unsigned long at memory location 0x000000E0019FF6F8.
+Exception thrown at 0x00007FFAC4E3536C (KernelBase.dll) in CardReaderTest.exe: 0x80100009: Указанное имя считывателя нераспознано.
+Exception thrown at 0x00007FFAC4E3536C (KernelBase.dll) in CardReaderTest.exe: 0x0000071A: The remote procedure call was canceled, or if a call time-out was specified, the call timed out.
+Exception thrown at 0x00007FFAC4E3536C in CardReaderTest.exe: Microsoft C++ exception: unsigned long at memory location 0x000000E0018FECF8.
+'CardReaderTest.exe' (Win32): Loaded 'C:\Windows\System32\kernel.appcore.dll'. 
+The thread 0x110c has exited with code 0 (0x0).
+The thread 0x5600 has exited with code 0 (0x0).
+The thread 0x640 has exited with code 0 (0x0).
+The program '[29216] CardReaderTest.exe' has exited with code 0 (0x0).
