@@ -24,6 +24,7 @@
     <ProjectGuid>{c5f2d85c-2ca0-49aa-a683-8c2c2907a098}</ProjectGuid>
     <RootNamespace>CardReaderTest</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>DataEncoder</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
