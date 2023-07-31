@@ -60,11 +60,11 @@ void DataEncoder::initialize(const CString &iniFileName, int &codeError)
         readerName = readersNames[0];
 
     // Recieving key for data encryption
-//    _encKey = getEncKey(codeError);
-//    _cardKey = getCardKey(codeError);
-    _encKey =attemptToGetCardKey(TypeKey::Billet, codeError);
-    _cardKey=attemptToGetCardKey(TypeKey::Encrypt, codeError);
-    if(_encKey.IsEmpty() || _cardKey.IsEmpty())
+    //    _encKey = getEncKey(codeError);
+    //    _cardKey = getCardKey(codeError);
+    _encKey = attemptToGetCardKey(TypeKey::Billet, codeError);
+    _cardKey = attemptToGetCardKey(TypeKey::Encrypt, codeError);
+    if (_encKey.IsEmpty() || _cardKey.IsEmpty())
     {
         log("DataEncoder::initialize | Error generate keys \n");
         return;
@@ -97,7 +97,17 @@ void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileNa
 
     CString realOutFileName("");
     if (outFileName == inFileName)
-        realOutFileName = inFileName.Mid(0, inFileName.GetLength() - 4) + suffix + CString(".txt");
+    {
+        int lastDotEntry = inFileName.ReverseFind('.');
+        if (lastDotEntry == -1)
+        {
+            realOutFileName = inFileName + suffix;
+        }
+        else
+        {
+            realOutFileName = inFileName.Mid(0, lastDotEntry) + suffix + inFileName.Mid(lastDotEntry);
+        }
+    }
     else
         realOutFileName = outFileName;
 
@@ -122,15 +132,16 @@ void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileNa
         codeError = -1;
         return;
     }
-
-    int columnIdx = getDataFieldColumnIdx(CString(line), codeError);
+    CString firstLine(line);
+    firstLine = firstLine.Mid(0, firstLine.GetLength() - 1);
+    int columnIdx = getDataFieldColumnIdx(firstLine, codeError);
     if (codeError != 0)
         return;
     // Writing first line to out file
-    fprintf(outFile, "%S", CString(line));
+    fprintf(outFile, "%S\n", firstLine);
 
     CString formatString = "";
-    while (currLineNum < dataLineNumber)
+    while (currLineNum < dataLineNumber - 1)
     {
         char *strPtr = fgets(line, buffSize, inFile);
         currLineNum += 1;
@@ -143,6 +154,7 @@ void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileNa
         if (currLineNum == formatLineNumber)
         {
             formatString = CString(line);
+            formatString = formatString.Mid(0, formatString.GetLength() - 1);
         }
     }
     // Writing second line to out file
@@ -153,18 +165,19 @@ void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileNa
     if (codeError != 0)
         return;
 
-    fprintf(outFile, "%S", formatString);
+    fprintf(outFile, "%S\n", formatString);
 
     // Encrypting and writing all other lines to out file
     while (fgets(line, buffSize, inFile) != NULL)
     {
         CString data(line);
+        data = data.Mid(0, data.GetLength() - 1);
         CString field = getFieldFromColumn(data, columnIdx, codeError);
         if (codeError != 0)
             return;
 
         field = getRandomPrefix() + field;
-        int paddingSize = field.GetLength() - 16 * (field.GetLength() / 16);
+        int paddingSize = (field.GetLength() / 16 + 1) * 16 - field.GetLength();
         field = field + CString(paddingSym, paddingSize);
 
         CString encField = encString(field);
@@ -173,7 +186,7 @@ void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileNa
         if (codeError != 0)
             return;
 
-        fprintf(outFile, "%S", newData);
+        fprintf(outFile, "%S\n", newData);
     }
 
     fclose(inFile);
@@ -231,14 +244,14 @@ std::vector<CString> DataEncoder::getReadersNames(int &codeError)
     }
 
     CString readers;
-    for (const auto& str : readersNames)
+    for (const auto &str : readersNames)
         readers += "\"" + str + "\"";
     log("DataEncoder::getReadersNames | Readers :  " + readers);
 
     return readersNames;
 }
 
-CString DataEncoder::attemptToGetCardKey(TypeKey typeKey,int &codeError)
+CString DataEncoder::attemptToGetCardKey(TypeKey typeKey, int &codeError)
 {
     SCARDHANDLE hCardHandle = 0;
 
@@ -276,7 +289,7 @@ CString DataEncoder::attemptToGetCardKey(TypeKey typeKey,int &codeError)
     static const BYTE SELECT_AID[] = {0x00, 0xA4, 0x04, 0x04, 0x10, 0xFF, 0x45, 0x43, 0x50, 0x52, 0x55,
                                       0x53, 0x4B, 0x45, 0x59, 0x42, 0x4F, 0x58, 0x00, 0x00, 0x11};
     // Set APDU Get Random
-    BYTE GET_RAND[] = { 0x80, 0x50, 0x00, 0x00, 0x18};
+    BYTE GET_RAND[] = {0x80, 0x50, 0x00, 0x00, 0x18};
     // Set APDU Get Key
     BYTE GET_KEY[] = {0x80, 0x40, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -305,53 +318,55 @@ CString DataEncoder::attemptToGetCardKey(TypeKey typeKey,int &codeError)
     switch (typeKey)
     {
         case TypeKey::Billet:
-        // Send Command Get Key to Card
-        dwRecv = sizeof(pbRecv);
-        if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_RAND, sizeof(GET_RAND), NULL, pbRecv, &dwRecv) != 0)
-        {
-            log("DataEncoder::attemptToGetCardKey | No connection with the card or the reader during Key recive \n");
-            SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
-            codeError = -1;
-            return emptyString;
-        }
-        break;
+            // Send Command Get Key to Card
+            dwRecv = sizeof(pbRecv);
+            if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_RAND, sizeof(GET_RAND), NULL, pbRecv, &dwRecv) != 0)
+            {
+                log("DataEncoder::attemptToGetCardKey | No connection with the card or the reader during Key recive "
+                    "\n");
+                SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
+                codeError = -1;
+                return emptyString;
+            }
+            break;
         case TypeKey::Encrypt:
-        // Send Command Get Key to Card
-        dwRecv = sizeof(pbRecv);
-        if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_KEY, sizeof(GET_KEY), NULL, pbRecv, &dwRecv) != 0)
-        {
-            log("DataEncoder::attemptToGetCardKey | No connection with the card or the reader during Key recive \n");
-            SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
-            codeError = -1;
-            return emptyString;
-        }
-        // Check Status word, if not success, exit with error
-        if ((pbRecv[0] != 0x61) || (pbRecv[1] != 0x18))
-        {
-            log("DataEncoder::attemptToGetCardKey | Do not run the command GET KEY \n");
-            SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
-            codeError = -1;
-            return emptyString;
-        }
+            // Send Command Get Key to Card
+            dwRecv = sizeof(pbRecv);
+            if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_KEY, sizeof(GET_KEY), NULL, pbRecv, &dwRecv) != 0)
+            {
+                log("DataEncoder::attemptToGetCardKey | No connection with the card or the reader during Key recive "
+                    "\n");
+                SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
+                codeError = -1;
+                return emptyString;
+            }
+            // Check Status word, if not success, exit with error
+            if ((pbRecv[0] != 0x61) || (pbRecv[1] != 0x18))
+            {
+                log("DataEncoder::attemptToGetCardKey | Do not run the command GET KEY \n");
+                SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
+                codeError = -1;
+                return emptyString;
+            }
 
-        // Take the key from card
-        dwRecv = sizeof(pbRecv);
-        if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_RESPONSE, sizeof(GET_RESPONSE), NULL, pbRecv, &dwRecv) != 0)
-        {
-            log("DataEncoder::attemptToGetCardKey | Failed to read key from the card \n");
-            SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
+            // Take the key from card
+            dwRecv = sizeof(pbRecv);
+            if (SCardTransmit(hCardHandle, SCARD_PCI_T0, GET_RESPONSE, sizeof(GET_RESPONSE), NULL, pbRecv, &dwRecv) !=
+                0)
+            {
+                log("DataEncoder::attemptToGetCardKey | Failed to read key from the card \n");
+                SCardDisconnect(hCardHandle, SCARD_SHARE_SHARED);
+                codeError = -1;
+                return emptyString;
+            }
+
+            break;
+        default:
+            log("DataEncoder::attemptToGetCardKey | There is no typeKey \n");
             codeError = -1;
             return emptyString;
-        }
-
-        break;
-    default:
-        log("DataEncoder::attemptToGetCardKey | There is no typeKey \n");
-        codeError = -1;
-        return emptyString;
-        break;
+            break;
     }
-
 
     // Check Status word, if not success, exit with error
     if ((pbRecv[24] != 0x90) || (pbRecv[25] != 0x00))
@@ -414,7 +429,7 @@ CString DataEncoder::encString(const CString &data)
 
     BYTE *bData = new BYTE[data.GetLength()];
     BYTE *bEncrypted = new BYTE[data.GetLength()];
-    char *hEncrypted = new char[data.GetLength() + 1];
+    char *hEncrypted = new char[size_t(data.GetLength()) + 1];
 
     CT2A ascii(data);
     char *charPtrData = ascii.m_psz;
@@ -533,9 +548,12 @@ CString DataEncoder::setFieldToColumn(const CString &data, const CString &field,
         }
     }
 
-    CString newData = data.Mid(0, searchPos) + field + fieldsDelimetr;
+    CString newData = data.Mid(0, searchPos) + field;
 
     strToken = data.Tokenize(fieldsDelimetr, searchPos);
+    int oldSearchPos = searchPos;
+    if (!data.Tokenize(fieldsDelimetr, oldSearchPos).IsEmpty())
+        newData += fieldsDelimetr;
     newData += data.Mid(searchPos);
 
     return newData;
