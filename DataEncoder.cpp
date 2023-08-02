@@ -158,10 +158,12 @@ void DataEncoder::encodeFile(const CString &inFileName, const CString &outFileNa
         }
     }
     // Writing second line to out file
-    CString encField("ENC=");
+    CString encField = formatString.Mid(0, formatString.Find('=') + 1);
+    encField += _encKey + CString(",");
+    encField += formatString.Mid(formatString.Find('=') + 1, formatString.Find(',') - formatString.Find('='));
 
     // Suppose ENC field is the first one
-    formatString = setFieldToColumn(formatString, encField + _encKey, 0, codeError);
+    formatString = encField + formatString.Mid(formatString.Find(',') + 1);
     if (codeError != 0)
         return;
 
